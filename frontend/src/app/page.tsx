@@ -13,13 +13,13 @@ export default function Home() {
       </h1>
       <div className="flex flex-col bg-[#87AEA5] p-2 rounded-md bg-opacity-80">
         Email:
-        <input type="text" className="rounded-md h-8" />
+        <input type="text" className="rounded-md h-8 text-black" />
         Senha:
-        <input type="text" className="rounded-md h-8" />
+        <input type="text" className="rounded-md h-8 text-black" />
         {isRegistering && (
           <>
             Nome:
-            <input type="text" className="rounded-md h-8" />
+            <input type="text" className="rounded-md h-8 text-black" />
           </>
         )}
         <div className="mt-8">
