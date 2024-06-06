@@ -2,17 +2,52 @@ package main
 
 import (
 	"aquahelp/gandalf/models"
+	"errors"
 	"net/http"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
+var secretKey = []byte("ABUBLEEEEEE")
+
 type LoginPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type Claims struct {
+	jwt.Claims
+	Username string `json:"username"`
+	UserID   uint   `json:"userID"`
+}
+
+func createToken(email string, userID uint) (string, error) {
+	claims := &Claims{
+		Username: email,
+		UserID:   userID,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(secretKey)
+}
+
+func verifyToken(tokenString string) (*jwt.Token, error) {
+	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return secretKey, nil
+	})
+}
+
+func extractClaims(token *jwt.Token) (*Claims, error) {
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		return &Claims{
+			Username: claims["username"].(string),
+			UserID:   claims["userID"].(uint),
+		}, nil
+	}
+	return nil, errors.New("invalid token claims")
 }
 
 func hashPassword(password string) (string, error) {
@@ -74,17 +109,37 @@ func loginUser(c echo.Context) error {
 	var user models.User
 	db.Model(&models.User{}).Where("email = ?", loginPayload.Email).First(&user)
 
-	// validate password
+	// Validate password
 	if !checkPassword(loginPayload.Password, user.Password) {
 		return echo.ErrUnauthorized
 	}
 	// Generate and return JWT token
-	// token, err := generateJWTToken(user)
-	// if err != nil {
-	// 	return echo.ErrInternalServerError
-	// }
+	token, err := createToken(user.Email, user.ID)
+	if err != nil {
+		return echo.ErrInternalServerError
+	}
 
+	c.Response().Header().Set("Authorization", token)
 	return c.JSON(http.StatusOK, map[string]string{"message": "Login successful"})
+}
+
+func verifyEndpoint(c echo.Context) error {
+	token := c.Request().Header.Get("Authorization")
+	if token == "" {
+		return echo.ErrUnauthorized
+	}
+
+	parsedToken, err := verifyToken(token)
+	if err != nil {
+		return echo.ErrUnauthorized
+	}
+
+	claims, err := extractClaims(parsedToken)
+	if err != nil {
+		return echo.ErrUnauthorized
+	}
+
+	return c.JSON(http.StatusOK, claims)
 }
 
 func main() {
@@ -101,5 +156,6 @@ func main() {
 	})
 	e.POST("/register", registerUser)
 	e.POST("/login", loginUser)
+	e.POST("/verify", verifyEndpoint)
 	e.Logger.Fatal(e.Start(":8000"))
 }
