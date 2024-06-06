@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	minioEndpoint = "localhost:9000"
-	minioAccess   = "minio"
-	minioSecret   = "minio"
+	minioEndpoint = "host.docker.internal:9000"
+	minioAccess   = "minioaccesskey"
+	minioSecret   = "miniosecretkey"
 )
 
 func connectMinio() (*minio.Client, error) {
@@ -27,7 +27,7 @@ func connectMinio() (*minio.Client, error) {
 }
 
 func connectDB() (*gorm.DB, error) {
-	dsn := "root:root@tcp(127.0.0.1:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:root@tcp(host.docker.internal:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -117,13 +117,13 @@ func createPollutionReport(c echo.Context) error {
 }
 
 func main() {
-	minio, err := connectMinio()
+	minioClient, err := connectMinio()
 	if err != nil {
 		panic(err)
 	}
 
-	if err := minio.MakeBucket("aquahelp", "us-east-1"); err != nil {
-		exists, errBucketExists := minio.BucketExists("aquahelp")
+	if err := minioClient.MakeBucket("aquahelp", "us-east-1"); err != nil {
+		exists, errBucketExists := minioClient.BucketExists("aquahelp")
 		if errBucketExists == nil && exists {
 			println("We already own 'aquahelp' bucket")
 		} else {
@@ -139,5 +139,5 @@ func main() {
 	e.POST("/animal_report", createAnimalReport)
 	e.POST("/pollution_report", createPollutionReport)
 
-	e.Logger.Fatal(e.Start(":8000"))
+	e.Logger.Fatal(e.Start(":8001"))
 }

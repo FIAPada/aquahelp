@@ -21,10 +21,9 @@ services:
   filestorage:
     image: minio/minio
     environment:
-      MINIO_ACCESS_KEY: "minio"
-      MINIO_SECRET_KEY: "minio"
+      MINIO_ACCESS_KEY: "minioaccesskey"
+      MINIO_SECRET_KEY: "miniosecretkey"
     ports:
       - "9000:9000"
-    volumes:
-      - ./filestorage/data:/data
-      - ./filestorage/config:/root/.minio
+      - "9001:9001"
+    command: minio server /data --console-address ":9001"
