@@ -125,8 +125,7 @@ func loginUser(c echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	c.Response().Header().Set("Authorization", token)
-	return c.JSON(http.StatusOK, map[string]string{"message": "Login successful"})
+	return c.JSON(http.StatusOK, map[string]string{"token": token})
 }
 
 func verifyEndpoint(c echo.Context) error {
