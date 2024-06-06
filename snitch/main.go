@@ -127,7 +127,7 @@ func main() {
 		if errBucketExists == nil && exists {
 			println("We already own 'aquahelp' bucket")
 		} else {
-			panic(err)
+			println("failed to create 'aquahelp' bucket")
 		}
 	}
 
