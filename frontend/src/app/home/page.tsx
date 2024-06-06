@@ -3,13 +3,34 @@
 import Image from "next/image";
 import OceanLife from "../../../public/oceanlife.png";
 import Pollution from "../../../public/pollution.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function Home() {
   const [isHoveringPollution, setIsHoveringPollution] = useState(false);
   const [isSnitchingOnPollution, setIsSnitchingOnPollution] = useState(false);
   const [isHoveringOceanLife, setIsHoveringOceanLife] = useState(false);
   const [isSnitchingOnOceanLife, setIsSnitchingOnOceanLife] = useState(false);
+
+  const token = localStorage.getItem("token");
+  const router = useRouter();
+  useEffect(() => {
+    if (token !== null) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      axios
+        .get("http://127.0.0.1:8000/verify")
+        .then((res) => {
+          router.push("/home");
+        })
+        .catch((e) => {
+          console.error("deu merda chefe: ", e);
+          router.push("/");
+        });
+    } else {
+      router.push("/");
+    }
+  });
 
   return (
     <main className="flex flex-col items-center justify-between p-24">
