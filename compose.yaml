@@ -11,3 +11,10 @@ services:
     build: ./snitch
     ports:
       - "8001:8001"
+  db:
+    image: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "aquahelp"
+    ports:
+      - "3306:3306"
