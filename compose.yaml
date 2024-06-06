@@ -18,3 +18,13 @@ services:
       MYSQL_DATABASE: "aquahelp"
     ports:
       - "3306:3306"
+  filestorage:
+    image: minio/minio
+    environment:
+      MINIO_ACCESS_KEY: "minio"
+      MINIO_SECRET_KEY: "minio"
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./filestorage/data:/data
+      - ./filestorage/config:/root/.minio

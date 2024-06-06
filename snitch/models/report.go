@@ -6,7 +6,6 @@ type AnimalReport struct {
 	gorm.Model
 	AddressNumber  string `json:"address_number"`
 	City           string `json:"city"`
-	Location       string `json:"location"`
 	Province       string `json:"province"`
 	ReferencePoint string `json:"reference_point"`
 	ReportedAt     string `json:"reported_at"`
@@ -17,7 +16,6 @@ type PollutionReport struct {
 	gorm.Model
 	AddressNumber  string `json:"address_number"`
 	City           string `json:"city"`
-	Location       string `json:"location"`
 	Province       string `json:"province"`
 	ReferencePoint string `json:"reference_point"`
 	ReportedAt     string `json:"reported_at"`

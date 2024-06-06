@@ -1,7 +1,6 @@
 "use client";
 
-import axios from "axios";
-import Image from "next/image";
+import { getAxiosLoginInstance } from "@/utils/axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,18 +11,24 @@ export default function Home() {
   const [name, setName] = useState("");
   const [registeredSuccessfully, setRegisteredSuccessfully] = useState(false);
   const [registerFailed, setRegisterFailed] = useState(false);
+  const [hasVerified, setHasVerified] = useState(false);
 
   const router = useRouter();
-  let token = undefined;
+  let axiosLoginInstance = undefined;
   if (typeof window !== "undefined") {
-    token = localStorage.getItem("token");
+    axiosLoginInstance = getAxiosLoginInstance(localStorage.getItem("token"));
   }
   useEffect(() => {
-    if (token !== null) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      axios.get("http://localhost:8000/verify").then((res) => {
-        router.push("/home");
-      });
+    if (axiosLoginInstance !== undefined && !hasVerified) {
+      axiosLoginInstance
+        .get("/verify")
+        .then(() => {
+          router.push("/home");
+          setHasVerified(true);
+        })
+        .catch(() => {
+          setHasVerified(true);
+        });
     }
   });
 
@@ -67,8 +72,8 @@ export default function Home() {
             <button
               className="w-28 h-12 border border-black rounded-md text-black font-bold shadow-lg bg-[#87AEA5]"
               onClick={() => {
-                axios
-                  .post("http://localhost:8000/login", {
+                axiosLoginInstance
+                  ?.post("/login", {
                     password,
                     email,
                   })
@@ -90,8 +95,8 @@ export default function Home() {
             } w-28 h-12 border border-black rounded-md text-black font-bold shadow-lg bg-[#87AEA5]`}
             onClick={() => {
               isRegistering &&
-                axios
-                  .post("http://localhost:8000/register", {
+                axiosLoginInstance
+                  ?.post("/register", {
                     name,
                     password,
                     email,

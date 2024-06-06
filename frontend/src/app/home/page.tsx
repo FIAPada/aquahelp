@@ -6,6 +6,7 @@ import Pollution from "../../../public/pollution.png";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import { getAxiosLoginInstance } from "@/utils/axios";
 
 export default function Home() {
   const [isHoveringPollution, setIsHoveringPollution] = useState(false);
@@ -13,13 +14,15 @@ export default function Home() {
   const [isHoveringOceanLife, setIsHoveringOceanLife] = useState(false);
   const [isSnitchingOnOceanLife, setIsSnitchingOnOceanLife] = useState(false);
 
-  const token = localStorage.getItem("token");
+  let axiosLoginInstance = undefined;
   const router = useRouter();
+  if (typeof window !== "undefined") {
+    axiosLoginInstance = getAxiosLoginInstance(localStorage.getItem("token"));
+  }
   useEffect(() => {
-    if (token !== null) {
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      axios
-        .get("http://localhost:8000/verify")
+    if (axiosLoginInstance !== undefined) {
+      axiosLoginInstance
+        .get("/verify")
         .then((res) => {
           router.push("/home");
         })
