@@ -5,7 +5,7 @@ export const getAxiosLoginInstance = (token: string | null) => {
     return axios.create({
       baseURL: "http://localhost:8000",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `${token}`,
       },
     });
   else
