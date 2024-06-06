@@ -1,28 +1,40 @@
 package main
 
 import (
-	"database/sql"
+	"aquahelp/gandalf/models"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-type User struct {
-	ID       uint64 `json:"id"`
-	Username string `json:"username"`
-	Password string `json:"password"` // This should be hashed securely in production
+type LoginPayload struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func connectDB() (*sql.DB, error) {
-	// Replace with your connection details
-	dsn := "user:password@tcp(localhost:3306)/database_name?charset=utf8"
-	db, err := sql.Open("mysql", dsn)
+func hashPassword(password string) (string, error) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(hashedPassword), nil
+}
+
+func checkPassword(password, hashedPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	return err == nil
+}
+
+func connectDB() (*gorm.DB, error) {
+	dsn := "root:root@tcp(127.0.0.1:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
 	}
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
+
 	return db, nil
 }
 
@@ -31,25 +43,19 @@ func registerUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
 
-	var user User
+	var user models.User
 	if err := c.Bind(&user); err != nil {
 		return echo.ErrBadRequest
 	}
 
-	// Hash password before storing (not implemented here)
-
-	stmt, err := db.Prepare("INSERT INTO users (username, password) VALUES (?, ?)")
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	_, err = stmt.Exec(user.Username, user.Password)
+	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
 		return echo.ErrInternalServerError
 	}
+
+	user.Password = hashedPassword
+	db.Create(user)
 
 	return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
 }
@@ -59,37 +65,36 @@ func loginUser(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-	defer db.Close()
 
-	var credentials struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-	if err := c.Bind(&credentials); err != nil {
+	var loginPayload LoginPayload
+	if err := c.Bind(&loginPayload); err != nil {
 		return echo.ErrBadRequest
 	}
 
-	var user User
-	row := db.QueryRow("SELECT * FROM users WHERE username = ?", credentials.Username)
-	err = row.Scan(&user.ID, &user.Username, &user.Password)
-	if err == sql.ErrNoRows {
-		return echo.ErrUnauthorized
-	} else if err != nil {
-		return echo.ErrInternalServerError
-	}
+	var user models.User
+	db.Model(&models.User{}).Where("email = ?", loginPayload.Email).First(&user)
 
-	// Validate password hash (not implemented here)
-
-	if credentials.Password != user.Password { // This should be secure password comparison
+	// validate password
+	if !checkPassword(loginPayload.Password, user.Password) {
 		return echo.ErrUnauthorized
 	}
-
-	// Generate and return JWT token (not implemented here)
+	// Generate and return JWT token
+	// token, err := generateJWTToken(user)
+	// if err != nil {
+	// 	return echo.ErrInternalServerError
+	// }
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Login successful"})
 }
 
 func main() {
+	db, err := connectDB()
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	db.AutoMigrate(&models.User{})
+
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello from gandalf!")
