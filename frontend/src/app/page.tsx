@@ -21,7 +21,7 @@ export default function Home() {
   useEffect(() => {
     if (token !== null) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      axios.get("http://127.0.0.1:8000/verify").then((res) => {
+      axios.get("http://localhost:8000/verify").then((res) => {
         router.push("/home");
       });
     }
@@ -68,12 +68,12 @@ export default function Home() {
               className="w-28 h-12 border border-black rounded-md text-black font-bold shadow-lg bg-[#87AEA5]"
               onClick={() => {
                 axios
-                  .post("http://127.0.0.1:8000/login", {
+                  .post("http://localhost:8000/login", {
                     password,
                     email,
                   })
                   .then((res) => {
-                    localStorage.setItem("token", res.headers.Authorization);
+                    localStorage.setItem("token", res.data.token);
                     router.push("/home");
                   })
                   .catch((e) => {
@@ -91,7 +91,7 @@ export default function Home() {
             onClick={() => {
               isRegistering &&
                 axios
-                  .post("http://127.0.0.1:8000/register", {
+                  .post("http://localhost:8000/register", {
                     name,
                     password,
                     email,

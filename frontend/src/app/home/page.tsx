@@ -19,7 +19,7 @@ export default function Home() {
     if (token !== null) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       axios
-        .get("http://127.0.0.1:8000/verify")
+        .get("http://localhost:8000/verify")
         .then((res) => {
           router.push("/home");
         })
