@@ -90,7 +90,7 @@ func registerUser(c echo.Context) error {
 	}
 
 	user.Password = hashedPassword
-	db.Create(user)
+	db.Create(&user)
 
 	return c.JSON(http.StatusCreated, map[string]string{"message": "User created successfully"})
 }
@@ -109,11 +109,10 @@ func loginUser(c echo.Context) error {
 	var user models.User
 	db.Model(&models.User{}).Where("email = ?", loginPayload.Email).First(&user)
 
-	// Validate password
 	if !checkPassword(loginPayload.Password, user.Password) {
 		return echo.ErrUnauthorized
 	}
-	// Generate and return JWT token
+
 	token, err := createToken(user.Email, user.ID)
 	if err != nil {
 		return echo.ErrInternalServerError
