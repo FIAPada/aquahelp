@@ -162,6 +162,6 @@ func main() {
 	})
 	e.POST("/register", registerUser)
 	e.POST("/login", loginUser)
-	e.POST("/verify", verifyEndpoint)
+	e.GET("/verify", verifyEndpoint)
 	e.Logger.Fatal(e.Start(":8000"))
 }
