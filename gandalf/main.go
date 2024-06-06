@@ -22,11 +22,11 @@ type LoginPayload struct {
 
 type Claims struct {
 	jwt.Claims
-	Username string `json:"username"`
-	UserID   uint   `json:"userID"`
+	Username string  `json:"username"`
+	UserID   float64 `json:"userID"`
 }
 
-func createToken(email string, userID uint) (string, error) {
+func createToken(email string, userID float64) (string, error) {
 	claims := &Claims{
 		Username: email,
 		UserID:   userID,
@@ -45,7 +45,7 @@ func extractClaims(token *jwt.Token) (*Claims, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		return &Claims{
 			Username: claims["username"].(string),
-			UserID:   claims["userID"].(uint),
+			UserID:   claims["userID"].(float64),
 		}, nil
 	}
 	return nil, errors.New("invalid token claims")
@@ -120,7 +120,7 @@ func loginUser(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	token, err := createToken(user.Email, user.ID)
+	token, err := createToken(user.Email, float64(user.ID))
 	if err != nil {
 		return echo.ErrInternalServerError
 	}
@@ -139,12 +139,12 @@ func verifyEndpoint(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	claims, err := extractClaims(parsedToken)
+	_, err = extractClaims(parsedToken)
 	if err != nil {
 		return echo.ErrUnauthorized
 	}
 
-	return c.JSON(http.StatusOK, claims)
+	return c.JSON(http.StatusOK, "verified!")
 }
 
 func main() {
