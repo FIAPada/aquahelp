@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -84,6 +85,12 @@ func registerUser(c echo.Context) error {
 		return echo.ErrBadRequest
 	}
 
+	var existingUser models.User
+	db.Model(&models.User{}).Where("email = ?", user.Email).First(&existingUser)
+	if existingUser.ID != 0 {
+		return echo.ErrBadRequest
+	}
+
 	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
 		return echo.ErrInternalServerError
@@ -150,6 +157,7 @@ func main() {
 	db.AutoMigrate(&models.User{})
 
 	e := echo.New()
+	e.Use(middleware.CORS())
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello from gandalf!")
 	})
