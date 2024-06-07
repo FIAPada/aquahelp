@@ -14,6 +14,14 @@ export default function Home() {
   const [isHoveringOceanLife, setIsHoveringOceanLife] = useState(false);
   const [isSnitchingOnOceanLife, setIsSnitchingOnOceanLife] = useState(false);
 
+  const [addressNumber, setAddressNumber] = useState("");
+  const [city, setCity] = useState("");
+  const [province, setProvince] = useState("");
+  const [referencePoint, setReferencePoint] = useState("");
+  const [reportedAt, setReportedAt] = useState("");
+  const [streetName, setStreetName] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+
   let axiosLoginInstance = undefined;
   const router = useRouter();
   if (typeof window !== "undefined") {
@@ -91,17 +99,23 @@ export default function Home() {
                 className="rounded-md p-2 mb-2 text-black"
                 type="text"
                 placeholder="Rua*:"
+                value={streetName}
+                onChange={(e) => setStreetName(e.target.value)}
               />
               <div>
                 <input
                   className="rounded-md p-2 mb-2 mr-2 text-black"
                   type="number"
                   placeholder="Número:"
+                  value={addressNumber}
+                  onChange={(e) => setAddressNumber(e.target.value)}
                 />
                 <input
                   className="rounded-md p-2 mb-2 text-black"
                   type="text"
                   placeholder="Cidade*:"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
                 />
               </div>
               <div>
@@ -109,22 +123,32 @@ export default function Home() {
                   className="rounded-md p-2 mb-2 mr-2 text-black"
                   type="text"
                   placeholder="Ponto de referência:"
+                  value={referencePoint}
+                  onChange={(e) => setReferencePoint(e.target.value)}
                 />
                 <input
                   className="rounded-md p-2 mb-2 text-black"
                   type="text"
                   placeholder="Estado*:"
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
                 />
               </div>
               Data e hora (aproximado)*:
               <input
                 className="rounded-md p-2 mb-2 text-black"
                 type="datetime-local"
+                value={reportedAt}
+                onChange={(e) => setReportedAt(e.target.value)}
               />
               Adicionar imagem:
               <input
                 className="rounded-md p-2 mb-2 bg-white text-gray-400 file:bg-[#87AEA5] file:text-black file:border-black file:border file:rounded-md file:shadow-lg file:h-12"
                 type="file"
+                accept="image/*"
+                onChange={(e) =>
+                  e.target.files !== null ? setImage(e.target.files[0]) : null
+                }
               />
             </div>
             <div className="flex mt-4 items-center">
@@ -132,10 +156,39 @@ export default function Home() {
                 className="ml-36 w-28 h-12 border border-black rounded-md text-black font-bold shadow-lg bg-[#87AEA5]"
                 onClick={() => {
                   if (isSnitchingOnOceanLife) {
-                    setIsSnitchingOnOceanLife(false);
+                    const formData = new FormData();
+                    formData.append("address_number", addressNumber);
+                    formData.append("city", city);
+                    formData.append("province", province);
+                    formData.append("reference_point", referencePoint);
+                    formData.append("reported_at", reportedAt);
+                    formData.append("street_name", streetName);
+                    if (image) formData.append("image", image);
+
+                    axios({
+                      method: "post",
+                      url: "http://localhost:8001/animal_report",
+                      data: formData,
+                      headers: { "Content-Type": "multipart/form-data" },
+                    });
                   }
                   if (isSnitchingOnPollution) {
                     setIsSnitchingOnPollution(false);
+                    const formData = new FormData();
+                    formData.append("address_number", addressNumber);
+                    formData.append("city", city);
+                    formData.append("province", province);
+                    formData.append("reference_point", referencePoint);
+                    formData.append("reported_at", reportedAt);
+                    formData.append("street_name", streetName);
+                    if (image) formData.append("image", image);
+
+                    axios({
+                      method: "post",
+                      url: "http://localhost:8001/pollution_report",
+                      data: formData,
+                      headers: { "Content-Type": "multipart/form-data" },
+                    });
                   }
                 }}
               >
