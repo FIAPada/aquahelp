@@ -65,7 +65,7 @@ func checkPassword(password, hashedPassword string) bool {
 }
 
 func connectDB() (*gorm.DB, error) {
-	dsn := "root:root@tcp(host.docker.internal:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:root@tcp(localhost:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err

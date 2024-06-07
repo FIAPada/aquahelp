@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	minioEndpoint = "host.docker.internal:9000"
+	minioEndpoint = "localhost:9000"
 	minioAccess   = "minioaccesskey"
 	minioSecret   = "miniosecretkey"
 )
@@ -27,7 +27,7 @@ func connectMinio() (*minio.Client, error) {
 }
 
 func connectDB() (*gorm.DB, error) {
-	dsn := "root:root@tcp(host.docker.internal:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:root@tcp(localhost:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
@@ -62,18 +62,24 @@ func createAnimalReport(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "failed to get image")
 	}
-
 	if file.Size > 1024*1024*15 {
 		return c.String(http.StatusBadRequest, "image size too large")
 	}
 
+	src, err := file.Open()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "failed to open file")
+	}
+	defer src.Close()
+
 	fileName := fmt.Sprint(report.ID) + ".jpg"
-	filePath := "animal_reports/" + fileName
-	if _, err := minioClient.FPutObject("aquahelp", file.Filename, filePath, minio.PutObjectOptions{ContentType: "image/jpeg"}); err != nil {
-		return c.String(http.StatusInternalServerError, "failed to upload image")
+
+	_, err = minioClient.PutObject("aquahelp", fileName, src, file.Size, minio.PutObjectOptions{ContentType: file.Header.Get("Content-Type")})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error uploading file to Minio")
 	}
 
-	return c.String(http.StatusCreated, "report created")
+	return c.String(http.StatusOK, "report created")
 }
 
 func createPollutionReport(c echo.Context) error {
@@ -102,15 +108,21 @@ func createPollutionReport(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "failed to get image")
 	}
-
 	if file.Size > 1024*1024*15 {
 		return c.String(http.StatusBadRequest, "image size too large")
 	}
 
+	src, err := file.Open()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "failed to open file")
+	}
+	defer src.Close()
+
 	fileName := fmt.Sprint(report.ID) + ".jpg"
-	filePath := "pollution_reports/" + fileName
-	if _, err := minioClient.FPutObject("aquahelp", file.Filename, filePath, minio.PutObjectOptions{ContentType: "image/jpeg"}); err != nil {
-		return c.String(http.StatusInternalServerError, "failed to upload image")
+
+	_, err = minioClient.PutObject("aquahelp", fileName, src, file.Size, minio.PutObjectOptions{ContentType: file.Header.Get("Content-Type")})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Error uploading file to Minio")
 	}
 
 	return c.String(http.StatusCreated, "report created")
@@ -131,8 +143,17 @@ func main() {
 		}
 	}
 
+	db, err := connectDB()
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	db.AutoMigrate(&models.AnimalReport{})
+	db.AutoMigrate(&models.PollutionReport{})
+
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
+		fmt.Println("do we have feedback?")
 		return c.String(http.StatusOK, "Hello from snitch!")
 	})
 
