@@ -2,10 +2,14 @@ package main
 
 import (
 	"aquahelp/gandalf/models"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/crypto/bcrypt"
@@ -21,7 +25,6 @@ type LoginPayload struct {
 }
 
 type Claims struct {
-	jwt.Claims
 	Username string  `json:"username"`
 	UserID   float64 `json:"userID"`
 }
@@ -31,24 +34,53 @@ func createToken(email string, userID float64) (string, error) {
 		Username: email,
 		UserID:   userID,
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretKey)
-}
-
-func verifyToken(tokenString string) (*jwt.Token, error) {
-	return jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
-	})
-}
-
-func extractClaims(token *jwt.Token) (*Claims, error) {
-	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		return &Claims{
-			Username: claims["username"].(string),
-			UserID:   claims["userID"].(float64),
-		}, nil
+	claimsJSON, err := json.Marshal(claims)
+	if err != nil {
+		return "", err
 	}
-	return nil, errors.New("invalid token claims")
+	claimsBase64 := base64.RawURLEncoding.EncodeToString(claimsJSON)
+
+	// Create the signature
+	h := hmac.New(sha256.New, secretKey)
+	h.Write([]byte(claimsBase64))
+	signature := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+
+	// Combine the claims and signature to form the token
+	token := strings.Join([]string{claimsBase64, signature}, ".")
+
+	return token, nil
+}
+
+func verifyToken(tokenString string) (*Claims, error) {
+	tokenParts := strings.Split(tokenString, ".")
+	if len(tokenParts) != 2 {
+		return nil, errors.New("invalid token format")
+	}
+
+	claimsBase64 := tokenParts[0]
+	signature := tokenParts[1]
+
+	// Verify the signature
+	h := hmac.New(sha256.New, secretKey)
+	h.Write([]byte(claimsBase64))
+	expectedSignature := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+	if signature != expectedSignature {
+		return nil, errors.New("invalid token signature")
+	}
+
+	// Decode the claims
+	claimsJSON, err := base64.RawURLEncoding.DecodeString(claimsBase64)
+	if err != nil {
+		return nil, errors.New("failed to decode token claims")
+	}
+
+	var claims Claims
+	err = json.Unmarshal(claimsJSON, &claims)
+	if err != nil {
+		return nil, errors.New("failed to unmarshal token claims")
+	}
+
+	return &claims, nil
 }
 
 func hashPassword(password string) (string, error) {
@@ -134,12 +166,7 @@ func verifyEndpoint(c echo.Context) error {
 		return echo.ErrUnauthorized
 	}
 
-	parsedToken, err := verifyToken(token)
-	if err != nil {
-		return echo.ErrUnauthorized
-	}
-
-	_, err = extractClaims(parsedToken)
+	_, err := verifyToken(token)
 	if err != nil {
 		return echo.ErrUnauthorized
 	}

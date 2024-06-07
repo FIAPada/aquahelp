@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/minio/minio-go"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -79,7 +80,7 @@ func createAnimalReport(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Error uploading file to Minio")
 	}
 
-	return c.String(http.StatusOK, "report created")
+	return c.String(http.StatusCreated, "report created")
 }
 
 func createPollutionReport(c echo.Context) error {
@@ -152,8 +153,8 @@ func main() {
 	db.AutoMigrate(&models.PollutionReport{})
 
 	e := echo.New()
+	e.Use(middleware.CORS())
 	e.GET("/", func(c echo.Context) error {
-		fmt.Println("do we have feedback?")
 		return c.String(http.StatusOK, "Hello from snitch!")
 	})
 
