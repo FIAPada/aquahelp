@@ -169,7 +169,6 @@ export default function Home() {
                       method: "post",
                       url: "http://localhost:8001/animal_report",
                       data: formData,
-                      headers: { "Content-Type": "multipart/form-data" },
                     });
                   }
                   if (isSnitchingOnPollution) {
@@ -187,7 +186,6 @@ export default function Home() {
                       method: "post",
                       url: "http://localhost:8001/pollution_report",
                       data: formData,
-                      headers: { "Content-Type": "multipart/form-data" },
                     });
                   }
                 }}
