@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	minioEndpoint = "localhost:9000"
+	minioEndpoint = "host.docker.internal:9000"
 	minioAccess   = "minioaccesskey"
 	minioSecret   = "miniosecretkey"
 )
@@ -28,7 +28,7 @@ func connectMinio() (*minio.Client, error) {
 }
 
 func connectDB() (*gorm.DB, error) {
-	dsn := "root:root@tcp(localhost:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:root@tcp(host.docker.internal:3306)/aquahelp?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err

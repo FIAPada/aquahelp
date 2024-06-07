@@ -167,7 +167,7 @@ export default function Home() {
 
                     axios({
                       method: "post",
-                      url: "http://localhost:8001/animal_report",
+                      url: "http://host.docker.internal:8001/animal_report",
                       data: formData,
                     });
                   }
@@ -184,7 +184,7 @@ export default function Home() {
 
                     axios({
                       method: "post",
-                      url: "http://localhost:8001/pollution_report",
+                      url: "http://host.docker.internal:8001/pollution_report",
                       data: formData,
                     });
                   }
